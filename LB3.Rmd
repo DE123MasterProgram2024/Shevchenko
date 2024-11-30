@@ -1,0 +1,61 @@
+---
+title: "Лабораторна робота 3. Аналіз сезонних продажів"
+author: "Шевченко"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Зміст
+- [Хід роботи](#хід-роботи)
+- [Візуалізація даних](#візуалізація-даних)
+- [Висновки](#висновки)
+
+## Хід роботи
+
+```{r}
+# Завантаження бібліотеки
+library(dplyr)
+library(ggplot2)
+
+# Генерація тестових даних
+set.seed(400)
+year <- 2000:2005
+sales <- sapply(
+  month.abb, 
+  FUN = function(x) round(runif(n = 6, min = 100, max = 400), 0)
+)
+sales <- as.data.frame(sales, row.names = year)
+sales$year <- year
+
+# Додавання стовпців із середніми продажами за сезонами
+sales_seasonal <- sales %>%
+  rowwise() %>%
+  mutate(
+    winter_avg_sales = mean(c(Jan, Feb, Dec)),
+    spring_avg_sales = mean(c(Mar, Apr, May)),
+    summer_avg_sales = mean(c(Jun, Jul, Aug)),
+    autumn_avg_sales = mean(c(Sep, Oct, Nov))
+  ) %>%
+  select(year, winter_avg_sales, spring_avg_sales, summer_avg_sales, autumn_avg_sales)
+
+# Виведення таблиці з результатами
+cat("Таблиця із середніми продажами за сезонами:\n")
+print(sales_seasonal)
+# Візуалізація середніх продажів по сезонах
+sales_seasonal_long <- sales_seasonal %>%
+  pivot_longer(cols = starts_with("avg_sales"), 
+               names_to = "season", 
+               values_to = "average_sales")
+
+ggplot(sales_seasonal_long, aes(x = year, y = average_sales, color = season, group = season)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  labs(title = "Середні продажі за сезонами протягом років", 
+       x = "Рік", 
+       y = "Середній обсяг продажів", 
+       color = "Сезон") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+#висновки
+У даній лабораторній роботі було виконано аналіз сезонних продажів на основі згенерованих даних. За допомогою функцій з пакету dplyr створено нові стовпці, які відображають середні значення продажів для кожного сезону (зима, весна, літо, осінь). Це дозволило отримати зрозумілу структуру даних і провести порівняння сезонних показників, що може бути корисним для планування продажів та прогнозування майбутніх тенденцій.
